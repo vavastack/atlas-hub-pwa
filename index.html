@@ -1976,6 +1976,13 @@ function painel(){
 }
 
 /* ---------- banco (atualização diária) ---------- */
+/* PWA com os seus dados importados: o dados.json público só renova notícias, clima, mercado e vagas; o que é seu (empresas, agenda, sugestões, perfil, comentários, notas) continua o que você importou */
+function fundeRadar(n){var o={},m={};for(var k in n)o[k]=n[k];(R.itens||[]).forEach(function(x){m[x.id]=x;});
+  o.perfil=R.perfil||n.perfil;o.agenda=R.agenda||n.agenda;o.sugestoes=R.sugestoes||n.sugestoes;
+  o.itens=(n.itens||[]).map(function(x){var y={};for(var k in x)y[k]=x[k];if(!y.p&&m[x.id]&&m[x.id].p)y.p=m[x.id].p;return y;});
+  if(n.clima&&R.clima&&R.clima.local)o.clima=Object.assign({},n.clima,{local:R.clima.local,dica:R.clima.dica||n.clima.dica});return o;}
+function fundeVagas(n){var m={};(V.itens||[]).forEach(function(x){m[x.id]=x;});var o={atualizado:n.atualizado};
+  o.itens=(n.itens||[]).map(function(x){var y={},a=m[x.id];for(var k in x)y[k]=x[k];if(a){["ck","km"].forEach(function(k){if(a[k]!==undefined&&a[k]!==null)y[k]=a[k];});}return y;});return o;}
 function recebe(chave,dados){
   if(!dados||!dados.atualizado)return;
   var atual=chave==="radar"?R:chave==="vagas"?V:E;
@@ -1985,7 +1992,7 @@ function recebe(chave,dados){
 }
 (async function banco(){
   try{
-    if(!window.claude||!claude.use){if(location.protocol.indexOf("http")===0)fetch("dados.json",{cache:"no-cache"}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(d){recebe("radar",d.radar);recebe("vagas",d.vagas);recebe("empresas",d.empresas);}}).catch(function(){});return;}
+    if(!window.claude||!claude.use){if(location.protocol.indexOf("http")===0)fetch("dados.json",{cache:"no-cache"}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(d){if(IMPORTADO){d.radar=fundeRadar(d.radar);d.vagas=fundeVagas(d.vagas);d.empresas=E;}recebe("radar",d.radar);recebe("vagas",d.vagas);recebe("empresas",d.empresas);}}).catch(function(){});return;}
     var db=await claude.use("db");if(!db)return;
     ["radar","vagas","empresas"].forEach(function(k){db.doc("feed/"+k).onSnapshot(function(s){if(s.exists)recebe(k,s.data());},function(){});});
     var user=await claude.use("user"),id=user&&await user.id();
