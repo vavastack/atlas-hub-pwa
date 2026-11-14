@@ -983,7 +983,7 @@ function dock(){
   $("#ind").style.setProperty("--idx",String(GRUPOS.indexOf(gAtual)));document.documentElement.setAttribute("data-grupo",gAtual[0]);
 }
 function ir(k,semRolar){
-  aba=k;ultimo[grupoDe(k)[0]]=k;try{if(window.parent!==window)window.parent.postMessage({tipo:"atlas:aba",aba:k},"*");}catch(e){}try{sessionStorage.setItem("hub:aba",k);}catch(e){}
+  aba=k;ultimo[grupoDe(k)[0]]=k;try{if(window.parent!==window)window.parent.postMessage({tipo:"atlas:aba",aba:k},alvoPai());}catch(e){}try{sessionStorage.setItem("hub:aba",k);}catch(e){}
   dock();bAlvos();painel();faixaVis();setTimeout(foco,60);
   var pn=$("#painel");pn.classList.remove("entra");void pn.offsetWidth;pn.classList.add("entra");
   if(!semRolar)window.scrollTo({top:Math.max(0,$("#main").offsetTop-10),behavior:reduz()?"auto":"smooth"});
@@ -2018,20 +2018,23 @@ function recebe(chave,dados){
 
 /* ---------- ponte com o Atlas (mensagens) ---------- */
 var TEMAS_OK=["dark","light","holo","holo-claro","sunset","contraste"],COR_OK=["azul","ciano","ambar","violeta","vermelho","sunset"],AGENTE_COR={friday:"violeta",jarvis:"ambar",ultron:"ciano",atlas:"azul"};
+function alvoPai(){try{var o=location.ancestorOrigins&&location.ancestorOrigins[0];return o&&o!=="null"?o:"*";}catch(x){return "*";}}
 function atlasPonte(){
   window.addEventListener("message",function(e){
+    if(window.parent===window||e.source!==window.parent)return;
+    var alvo=(e.origin&&e.origin!=="null")?e.origin:"*";
     var m=e.data;if(!m||typeof m!=="object"||typeof m.tipo!=="string")return;
     var r=document.documentElement;
     if(m.tipo==="atlas:ir"&&typeof m.aba==="string"&&ABAS.some(function(a){return a[0]===m.aba;}))ir(m.aba,true);
     else if(m.tipo==="atlas:tema"){if(TEMAS_OK.indexOf(m.tema)>=0)r.setAttribute("data-tema",m.tema);if(COR_OK.indexOf(m.cor)>=0)r.setAttribute("data-cor",m.cor);}
-    else if(m.tipo==="atlas:pedir-links"){try{window.parent.postMessage({tipo:"atlas:links",links:LINKS.map(function(x){return {cat:x.cat,nome:x.nome,url:x.url||""};})},"*");}catch(e){}}
+    else if(m.tipo==="atlas:pedir-links"){try{e.source.postMessage({tipo:"atlas:links",links:LINKS.map(function(x){return {cat:x.cat,nome:x.nome,url:x.url||""};})},alvo);}catch(e2){}}
     else if(m.tipo==="atlas:tom"){if(MATIZES.indexOf(m.matiz)>=0)S.mono.matiz=m.matiz;if(Number.isFinite(m.int))S.mono.int=Math.max(0,Math.min(100,m.int));S.cor="mono";aplicarTema();}
     else if(m.tipo==="atlas:agente"&&AGENTE_COR[m.agente])r.setAttribute("data-cor",AGENTE_COR[m.agente]);
     else if(m.tipo==="atlas:foco"){if(m.ligado)r.setAttribute("data-foco","1");else r.removeAttribute("data-foco");}
     else if(m.tipo==="atlas:restaurar")aplicarTema();
     if(m.tipo.indexOf("atlas:")===0)lerCores();
   },false);
-  try{if(window.parent!==window)window.parent.postMessage({tipo:"atlas:pronto",versao:VERSAO_APP,links:LINKS.length,abas:ABAS.map(function(a){return a[0];}),widgets:["momento","hero","bussola","contador","mercado","agenda","planos","foco","globo"]},"*");}catch(x){}
+  try{if(window.parent!==window)window.parent.postMessage({tipo:"atlas:pronto",versao:VERSAO_APP,links:LINKS.length,abas:ABAS.map(function(a){return a[0];}),widgets:["momento","hero","bussola","contador","mercado","agenda","planos","foco","globo"]},alvoPai());}catch(x){}
 }
 
 /* ---------- início ---------- */
